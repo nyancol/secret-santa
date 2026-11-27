@@ -1,0 +1,60 @@
+{
+  "name": "secret-santa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Secret Santa — minimal hello-world Node API with OTEL telemetry (same DevOps shape as 1001-restaurants).",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run --coverage",
+    "test:changed": "vitest run --changed",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/rate-limit": "^11.3.0",
+    "@fastify/swagger": "^9.9.4",
+    "better-sqlite3": "^13.2.0",
+    "drizzle-orm": "^0.45.4",
+    "jose": "^6.0.12",
+    "openid-client": "^6.9.0",
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.83.1",
+    "@opentelemetry/exporter-logs-otlp-proto": "^0.301.2",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.301.2",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.301.2",
+    "@opentelemetry/instrumentation-fastify": "^0.57.0",
+    "@opentelemetry/instrumentation-pino": "^0.71.0",
+    "@opentelemetry/instrumentation-runtime-node": "^0.38.0",
+    "@opentelemetry/resources": "^3.1.1",
+    "@opentelemetry/sdk-logs": "^3.1.1",
+    "@opentelemetry/sdk-metrics": "^3.1.1",
+    "@opentelemetry/sdk-node": "^0.301.2",
+    "@opentelemetry/semantic-conventions": "^1.45.0",
+    "fastify": "^5.6.1",
+    "pino": "^10.4.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.6.6",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
+    "prettier": "^3.10.1",
+    "tsx": "^4.20.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.1"
+  },
+  "overrides": {
+    "esbuild": "^0.28.2",
+    "glob": "^14.0.2",
+    "minimatch": "^11.0.1"
+  }
+}
