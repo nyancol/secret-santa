@@ -1,0 +1,61 @@
+#!/bin/sh
+# betterleaks pre-commit hook (versioned).
+# Scans staged changes; blocks the commit when secrets are found.
+# Bypass (not recommended): BETTERLEAKS_DISABLE=1 git commit ...
+
+if [ "${BETTERLEAKS_DISABLE:-}" = "1" ]; then
+  echo "[betterleaks] skipped (BETTERLEAKS_DISABLE=1)"
+  exit 0
+fi
+
+resolve_bin() {
+  if command -v betterleaks >/dev/null 2>&1; then
+    echo "betterleaks"
+  elif command -v mise >/dev/null 2>&1; then
+    echo "mise x -- betterleaks"
+  else
+    echo ""
+  fi
+}
+
+BIN=$(resolve_bin)
+if [ -z "$BIN" ]; then
+  echo "[betterleaks] binary not found. Install it with one of:"
+  echo "  mise install          # installs pinned version from mise.toml"
+  echo "  brew install betterleaks"
+  echo "Commit blocked to avoid pushing unprotected secrets."
+  exit 1
+fi
+
+# shellcheck disable=SC2086
+$BIN protect --staged --redact
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "[betterleaks] commit blocked: possible secret in staged changes."
+  echo "  - Remove the secret, or"
+  echo "  - False positive? add path/pattern to .betterleaksignore, or"
+  echo "    append '# betterleaks:allow' to the offending line with a justification."
+  exit $status
+fi
+
+# Prettier check on staged files (fast, no auto-fix — run `npm run format`).
+# Bypass: FORMAT_DISABLE=1 git commit ...
+if [ "${FORMAT_DISABLE:-}" != "1" ]; then
+  STAGED="$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|mjs|cjs|json|md|yml|yaml)$' || true)"
+  if [ -n "$STAGED" ]; then
+    if command -v npx >/dev/null 2>&1; then
+      # shellcheck disable=SC2086
+      npx --no-install prettier --check $STAGED >/dev/null 2>&1
+      if [ $? -ne 0 ]; then
+        echo "[prettier] commit blocked: run \`npm run format\` then re-stage." >&2
+        # shellcheck disable=SC2086
+        npx --no-install prettier --check $STAGED >&2
+        exit 1
+      fi
+    fi
+  fi
+fi
+
+exit 0

@@ -1,0 +1,26 @@
+# Preprod override for `mise run preprod-up`:
+#   sudo docker compose --env-file .env.preprod -p secret-santa-preprod -f compose.yaml -f compose.preprod.yaml up -d --build
+# Isolated instance (host http://localhost:5176, container :3000 to match the
+# Caddy target) with its own data volume. Production is never touched.
+# Host port is 5176 (NOT 5173/5174): avoids colliding with 1001-restaurants
+# dev (5173 HMR) and preprod (5174) on the same homelab host.
+# Canonical ports: dev API 3222; preprod host 5176 -> container 3000
+# (Caddy :8094); prod container 3000 (Caddy :8095), no host publication.
+
+services:
+  secret-santa:
+    container_name: secret-santa-staging
+    ports:
+      - "${HOST_PORT:-5176}:${PORT:-3000}"
+    networks:
+      - default
+      - caddy
+    environment:
+      NODE_ENV: production
+      APP_ORIGIN: "${APP_ORIGIN:-http://localhost:${HOST_PORT:-5176}}"
+    volumes:
+      # Own named volume (project prefix `secret-santa-preprod` isolates it anyway).
+      - secret-santa-preprod-data:/data
+
+volumes:
+  secret-santa-preprod-data:

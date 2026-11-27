@@ -1,0 +1,9 @@
+schema: spec-driven
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+context: |
+  Secret Santa hello-world API: Fastify + TypeScript + SQLite-free minimal service.
+  OTEL telemetry via homelab LGTM (endpoint-gated). Preprod single-slot flow
+  via compose + Caddy + telemetry networks. Keep changes small, spec-gated
+  (.agents/SPEC_GATED_WORKFLOW.md).

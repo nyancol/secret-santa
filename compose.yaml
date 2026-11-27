@@ -1,0 +1,88 @@
+# Base compose file — production defaults, variable names mirror
+# .env.dev / .env.sample. Used as:
+#   Preprod (isolated, own volume, Caddy network — see compose.preprod.yaml):
+#     docker compose --env-file .env.preprod -p secret-santa-preprod -f compose.yaml -f compose.preprod.yaml up -d --build
+#   Production (same pattern with your own env file / -p project name):
+#     docker compose --env-file .env.prod -p secret-santa -f compose.yaml up -d --build
+# Every value can be overridden with environment / .env file / -e.
+# Behind a reverse proxy, the service is attached to the shared proxy
+# network (same as compose.preprod.yaml). Make sure it exists once:
+#   docker network create caddy_public
+# (Local runs without a proxy still work as long as the network exists.)
+
+name: secret-santa
+
+services:
+  secret-santa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: secret-santa:latest
+    container_name: secret-santa
+    restart: unless-stopped
+    # Must exceed SHUTDOWN_TIMEOUT_MS (default 9s): SIGTERM -> drain
+    # in-flight via app.close() -> OTEL flush -> exit.
+    stop_grace_period: 20s
+    expose:
+      - "${PORT:-3000}"
+    environment:
+      NODE_ENV: "${NODE_ENV:-production}"
+      PORT: "${PORT:-3000}"
+      HOST: "${HOST:-0.0.0.0}"
+      DATABASE_PATH: "${DATABASE_PATH:-/data/app.db}"
+      SESSION_SECRET: "${SESSION_SECRET:?SESSION_SECRET must be set in the environment}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
+      DEV_LOGIN: "${DEV_LOGIN:-false}"
+      TRUST_PROXY: "${TRUST_PROXY:-true}"
+      APP_ORIGIN: "${APP_ORIGIN:-http://localhost:${PORT:-3000}}"
+      OIDC_ISSUER: "${OIDC_ISSUER:-}"
+      OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
+      OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET:-}"
+      OIDC_REDIRECT_URI: "${OIDC_REDIRECT_URI:-}"
+      # APP_ORIGIN is the per-deployment host variable (e.g. https://app.example.com).
+      # Telemetry (homelab LGTM stack over the external `telemetry` network).
+      # Unset OTEL_EXPORTER_OTLP_ENDPOINT = no export (preprod/dev stay dark).
+      # Prod values live in the Arcane-managed .env, never committed.
+      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
+      OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-secret-santa}"
+      DEPLOYMENT_ENVIRONMENT: "${DEPLOYMENT_ENVIRONMENT:-production}"
+      OTEL_SERVICE_VERSION: "${OTEL_SERVICE_VERSION:-}"
+      # Empty (unset) = package.json version via src/observability/env.ts
+      # ("unknown" is treated as unset too). Set explicitly per release to
+      # pin service.version to something other than the package version.
+    volumes:
+      - secret-santa-data:/data
+    networks:
+      - default
+      - caddy
+      - telemetry
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  secret-santa-data:
+
+# Shared reverse-proxy network (created outside this project by Caddy).
+# Attaching it here lets Caddy reach the app as http://secret-santa:${PORT}.
+networks:
+  caddy:
+    name: caddy_public
+    external: true
+  # Shared observability network (homelab LGTM stack lives here as `lgtm`).
+  # Created on the host outside this project: `docker network create telemetry`.
+  # Attaching here lets prod reach the collector as http://lgtm:4318.
+  # Preprod inherits the attachment via merge but exports nothing — its env
+  # never sets OTEL_EXPORTER_OTLP_ENDPOINT, so the SDK stays a no-op there.
+  telemetry:
+    name: telemetry
+    external: true
