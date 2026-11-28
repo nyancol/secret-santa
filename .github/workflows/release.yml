@@ -67,7 +67,7 @@ jobs:
         run: docker build -t secret-santa:${GITHUB_REF_NAME} -f Dockerfile .
 
       - name: SBOM (SPDX)
-        uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c # v0.20.5
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           image: secret-santa:${{ github.ref_name }}
           format: spdx-json
