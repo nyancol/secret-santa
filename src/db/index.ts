@@ -18,6 +18,84 @@ export const MIGRATIONS = [
       );
     `,
   },
+  {
+    version: 2,
+    name: "santa events",
+    sql: `
+      CREATE TABLE IF NOT EXISTS events (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        signup_deadline TEXT,
+        draw_date TEXT,
+        gift_date TEXT,
+        budget_amount REAL NOT NULL,
+        budget_currency TEXT NOT NULL,
+        organiser_id TEXT NOT NULL REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','drawn')),
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_events_organiser ON events(organiser_id);
+      CREATE TABLE IF NOT EXISTS event_participants (
+        event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (event_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_participants_user ON event_participants(user_id);
+      CREATE TABLE IF NOT EXISTS event_exclusions (
+        event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        giver_id TEXT NOT NULL,
+        recipient_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (event_id, giver_id, recipient_id),
+        CHECK (giver_id != recipient_id),
+        FOREIGN KEY (event_id, giver_id) REFERENCES event_participants(event_id, user_id) ON DELETE CASCADE,
+        FOREIGN KEY (event_id, recipient_id) REFERENCES event_participants(event_id, user_id) ON DELETE CASCADE
+      );
+      CREATE TABLE IF NOT EXISTS event_assignments (
+        event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        giver_id TEXT NOT NULL,
+        recipient_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (event_id, giver_id),
+        UNIQUE (event_id, recipient_id),
+        CHECK (giver_id != recipient_id),
+        FOREIGN KEY (event_id, giver_id) REFERENCES event_participants(event_id, user_id) ON DELETE CASCADE,
+        FOREIGN KEY (event_id, recipient_id) REFERENCES event_participants(event_id, user_id) ON DELETE CASCADE
+      );
+      CREATE TABLE IF NOT EXISTS participant_profiles (
+        event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
+        recipient_name TEXT,
+        address_line1 TEXT,
+        address_line2 TEXT,
+        city TEXT,
+        postal_code TEXT,
+        country TEXT,
+        phone TEXT,
+        notes TEXT,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (event_id, user_id),
+        FOREIGN KEY (event_id, user_id) REFERENCES event_participants(event_id, user_id) ON DELETE CASCADE
+      );
+      CREATE TABLE IF NOT EXISTS wishlist_items (
+        id TEXT PRIMARY KEY,
+        event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
+        label TEXT NOT NULL,
+        url TEXT,
+        price_hint TEXT,
+        priority INTEGER,
+        position INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (event_id, user_id) REFERENCES event_participants(event_id, user_id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_wishlist_owner ON wishlist_items(event_id, user_id, position);
+    `,
+  },
 ];
 
 export interface DbHandle {

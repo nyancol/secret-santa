@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Secret Santa — My events</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav><a href="/">Secret Santa</a></nav>
+      <div id="session"><span>Checking session…</span></div>
+    </header>
+    <main>
+      <section id="login-prompt" hidden>
+        <h1>Secret Santa</h1>
+        <p>Please log in to see your events.</p>
+        <p><a href="/api/auth/login">Login</a></p>
+      </section>
+
+      <section id="events-section" hidden>
+        <h1>My events</h1>
+        <p id="events-error" role="alert" hidden></p>
+        <p id="empty-state" hidden>No events yet — create one below.</p>
+        <ul id="event-list"></ul>
+
+        <h2>Create event</h2>
+        <form id="create-form">
+          <label>Name <input name="name" required maxlength="200" /></label>
+          <label>Description <input name="description" maxlength="2000" /></label>
+          <label>Budget amount <input name="budgetAmount" type="number" min="0" step="any" required /></label>
+          <label>Budget currency <input name="budgetCurrency" required minlength="1" maxlength="16" value="EUR" /></label>
+          <button type="submit">Create event</button>
+        </form>
+        <p id="create-error" role="alert" hidden></p>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+    <script src="/index.js"></script>
+  </body>
+</html>

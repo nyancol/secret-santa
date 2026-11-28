@@ -6,7 +6,7 @@ Minimal hello-world Node.js API with the same DevOps practices as `1001-restaura
 
 - Node 26, Fastify 5, TypeScript, pino.
 - OTEL → homelab LGTM (`http://lgtm:4318` on the `telemetry` Docker network). Enabled only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set — dev/preprod stay dark.
-- `GET /` → `{ hello: "world", service, version, origin }`.
+- `GET /` → minimal Secret Santa UI (static `public/`, same-origin).
 - `GET /api/health` → `{ status: "ok", service, version, uptime }`.
 
 ## Quickstart

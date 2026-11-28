@@ -232,7 +232,7 @@ describe("db migrations", () => {
       const rows = sqlite.prepare(`SELECT version FROM __migrations`).all() as {
         version: number;
       }[];
-      expect(rows.map((r) => r.version)).toEqual([1]);
+      expect(rows.map((r) => r.version)).toEqual([1, 2]);
     } finally {
       sqlite.close();
     }
@@ -251,13 +251,15 @@ describe("app without skipped discovery", () => {
     }
   });
 
-  it("answers 404 on unknown routes", async () => {
+  it("answers 404 JSON on unknown /api/ routes, UI fallback on unknown pages", async () => {
     const { app } = await buildApp({ config: testConfig(), skipOidcDiscovery: true });
     try {
       const api = await app.inject({ method: "GET", url: "/api/nope" });
       expect(api.statusCode).toBe(404);
+      expect(api.json()).toMatchObject({ error: "not_found" });
       const page = await app.inject({ method: "GET", url: "/nope" });
-      expect(page.statusCode).toBe(404);
+      expect(page.statusCode).toBe(200);
+      expect(page.headers["content-type"]).toMatch(/html/);
     } finally {
       await app.close();
     }

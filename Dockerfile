@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
   && apt-get purge -y --auto-remove python3 make g++ \
   && rm -rf /var/lib/apt/lists/* /root/.npm
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/public ./public
 USER app
 EXPOSE 3000
 VOLUME ["/data"]
