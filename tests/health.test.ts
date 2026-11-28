@@ -14,13 +14,55 @@ function testConfig(extra: Record<string, string> = {}) {
   } as NodeJS.ProcessEnv);
 }
 
-describe("hello world", () => {
-  it("GET / returns hello world payload", async () => {
+describe("minimal UI shell", () => {
+  it("GET / serves the UI entry point (no longer hello JSON)", async () => {
     const { app } = await buildApp({ config: testConfig(), skipOidcDiscovery: true });
     try {
       const res = await app.inject({ method: "GET", url: "/" });
       expect(res.statusCode).toBe(200);
-      expect(res.json()).toMatchObject({ hello: "world", service: "secret-santa" });
+      expect(res.headers["content-type"]).toMatch(/html/);
+      expect(res.body).toContain("Secret Santa");
+      expect(res.body).not.toContain("hello");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("GET /event.html serves the detail page", async () => {
+    const { app } = await buildApp({ config: testConfig(), skipOidcDiscovery: true });
+    try {
+      const res = await app.inject({ method: "GET", url: "/event.html?id=abc" });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers["content-type"]).toMatch(/html/);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("non-/api/ misses fall back to the UI; /api/* misses stay JSON 404", async () => {
+    const { app } = await buildApp({
+      config: testConfig({ DEV_LOGIN: "true" }),
+      skipOidcDiscovery: true,
+    });
+    try {
+      const page = await app.inject({ method: "GET", url: "/some-client-route" });
+      expect(page.statusCode).toBe(200);
+      expect(page.headers["content-type"]).toMatch(/html/);
+
+      // /api/v1/* requires a session; mint one via dev-login first.
+      const login = await app.inject({
+        method: "POST",
+        url: "/api/auth/dev-login",
+        payload: { user: "alice" },
+      });
+      expect(login.statusCode).toBe(200);
+      const setCookie = login.headers["set-cookie"];
+      const cookie = (Array.isArray(setCookie) ? setCookie[0] : (setCookie as string)).split(
+        ";",
+      )[0];
+      const api = await app.inject({ method: "GET", url: "/api/v1/nope", headers: { cookie } });
+      expect(api.statusCode).toBe(404);
+      expect(api.json()).toMatchObject({ error: "not_found" });
     } finally {
       await app.close();
     }

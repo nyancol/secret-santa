@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Secret Santa — Event</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav><a href="/">Secret Santa</a></nav>
+      <div id="session"><span>Checking session…</span></div>
+    </header>
+    <main>
+      <p><a href="/">← Back to events</a></p>
+
+      <section id="login-prompt" hidden>
+        <h1>Event</h1>
+        <p>Please log in to see this event.</p>
+        <p><a href="/api/auth/login">Login</a></p>
+      </section>
+
+      <section id="event-section" hidden>
+        <p id="event-error" role="alert" hidden></p>
+
+        <h1 id="event-name"></h1>
+        <dl id="event-facts"></dl>
+
+        <section id="edit-section" hidden>
+          <h2>Edit event</h2>
+          <form id="edit-form">
+            <label>Name <input name="name" required maxlength="200" /></label>
+            <label>Description <input name="description" maxlength="2000" /></label>
+            <label
+              >Budget amount <input name="budgetAmount" type="number" min="0" step="any"
+            /></label>
+            <label>Budget currency <input name="budgetCurrency" maxlength="16" /></label>
+            <button type="submit">Save changes</button>
+          </form>
+          <p id="edit-error" role="alert" hidden></p>
+        </section>
+
+        <section id="delete-section" hidden>
+          <h2>Delete event</h2>
+          <p class="hint">Permanently deletes the event, roster, exclusions and assignments.</p>
+          <button id="delete-btn" type="button">Delete event</button>
+          <p id="delete-error" role="alert" hidden></p>
+        </section>
+
+        <section id="roster-section">
+          <h2>Roster</h2>
+          <ul id="roster-list"></ul>
+          <div id="invite-block" hidden>
+            <h3>Invite participant</h3>
+            <form id="invite-search-form">
+              <label>Search users <input name="q" placeholder="name" maxlength="100" /></label>
+              <button type="submit">Search</button>
+            </form>
+            <ul id="invite-results"></ul>
+            <p id="invite-error" role="alert" hidden></p>
+          </div>
+        </section>
+
+        <section id="exclusions-section" hidden>
+          <h2>Exclusions</h2>
+          <p class="hint">
+            Pairs that must not gift each other. Nobody can ever gift themselves, so there is no
+            need to exclude someone with themselves.
+          </p>
+          <ul id="exclusions-list"></ul>
+          <form id="exclusion-form">
+            <label
+              >Giver
+              <select name="giver"></select
+            ></label>
+            <label
+              >Recipient
+              <select name="recipient"></select
+            ></label>
+            <label><input name="mutual" type="checkbox" checked /> Mutual</label>
+            <button type="submit">Add exclusion</button>
+          </form>
+          <p id="exclusion-error" role="alert" hidden></p>
+        </section>
+
+        <section id="draw-section" hidden>
+          <h2>Draw</h2>
+          <button id="draw-btn" type="button">Run draw</button>
+          <p id="draw-error" role="alert" hidden></p>
+        </section>
+
+        <section id="giftee-section">
+          <h2>My giftee</h2>
+          <p id="giftee-text">Loading…</p>
+        </section>
+
+        <section id="profile-section">
+          <h2>My shipping profile</h2>
+          <form id="profile-form">
+            <label>Recipient name <input name="recipientName" maxlength="200" /></label>
+            <label>Address line 1 <input name="addressLine1" maxlength="300" /></label>
+            <label>Address line 2 <input name="addressLine2" maxlength="300" /></label>
+            <label>City <input name="city" maxlength="150" /></label>
+            <label>Postal code <input name="postalCode" maxlength="30" /></label>
+            <label>Country <input name="country" maxlength="100" /></label>
+            <label>Phone <input name="phone" maxlength="50" /></label>
+            <label>Notes <input name="notes" maxlength="2000" /></label>
+            <button type="submit">Save profile</button>
+          </form>
+          <p id="profile-status" role="status" hidden></p>
+          <p id="profile-error" role="alert" hidden></p>
+        </section>
+
+        <section id="wishlist-section">
+          <h2>My wishlist</h2>
+          <ol id="wishlist-list"></ol>
+          <form id="wishlist-form">
+            <label>Label <input name="label" required maxlength="300" /></label>
+            <label>URL <input name="url" maxlength="2000" /></label>
+            <button type="submit">Add item</button>
+          </form>
+          <p id="wishlist-error" role="alert" hidden></p>
+        </section>
+
+        <section id="directory-section">
+          <h2>Participant directory</h2>
+          <p id="directory-error" role="alert" hidden></p>
+          <ul id="directory-list"></ul>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+    <script src="/event.js"></script>
+  </body>
+</html>

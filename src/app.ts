@@ -1,11 +1,16 @@
 import cookie from "@fastify/cookie";
+import fastifyStatic from "@fastify/static";
 import swagger from "@fastify/swagger";
 import Fastify, { type FastifyInstance } from "fastify";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { discoverOidc, registerAuthRoutes } from "./auth/routes.js";
 import { registerDevLoginRoute } from "./auth/dev-routes.js";
 import { sessionCookieName, verifySession } from "./auth/session.js";
 import { type AppConfig } from "./config.js";
 import { dbHealth, openDb, runMigrations } from "./db/index.js";
+import { registerEventRoutes } from "./events/routes.js";
+import { registerProfileRoutes } from "./profiles/routes.js";
 import { buildPinoOptions } from "./observability/logger.js";
 import { registerSecurity } from "./security.js";
 import { createRequire } from "node:module";
@@ -24,7 +29,6 @@ function packageVersion(): string {
 }
 
 const PUBLIC_PATHS = new Set([
-  "/",
   "/api/health",
   "/api/auth/login",
   "/api/auth/callback",
@@ -56,6 +60,12 @@ export async function buildApp(
   });
 
   await app.register(cookie);
+
+  // Minimal same-origin UI: static files under public/ (index.html, event.html,
+  // app.js, index.js, event.js, styles.css). No bundler, no external scripts.
+  const publicRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public");
+  await app.register(fastifyStatic, { root: publicRoot, prefix: "/", index: "index.html" });
+
   await registerSecurity(app, config);
   await app.register(swagger, {
     openapi: {
@@ -79,12 +89,7 @@ export async function buildApp(
     (req as any).userId = userId;
   });
 
-  app.get("/", async () => ({
-    hello: "world",
-    service: "secret-santa",
-    version: packageVersion(),
-    origin: config.appOrigin,
-  }));
+  // GET / serves the UI entry point (via @fastify/static index.html).
 
   app.get("/api/health", async () => ({
     status: "ok",
@@ -95,6 +100,21 @@ export async function buildApp(
   }));
 
   app.get("/api/v1/openapi.json", async () => app.swagger());
+
+  // Validation errors are 422 (spec-gated error shape), not Fastify's default 400.
+  app.setErrorHandler((err: any, _req, reply) => {
+    if (err?.validation) {
+      return reply.code(422).send({ error: "validation_error" });
+    }
+    const status = err?.statusCode && err.statusCode >= 400 ? err.statusCode : 500;
+    if (status >= 500) app.log.error({ err }, "unhandled error");
+    return reply
+      .code(status)
+      .send({ error: status === 500 ? "internal_error" : (err?.message ?? "error") });
+  });
+
+  registerEventRoutes(app);
+  registerProfileRoutes(app);
 
   // OIDC discovery (fail fast on bad issuer unless skipped for tests).
   let oidcConfig: any = null;
@@ -124,7 +144,10 @@ export async function buildApp(
 
   app.setNotFoundHandler(async (req, reply) => {
     if (req.url.startsWith("/api/")) return reply.code(404).send({ error: "not_found" });
-    return reply.code(404).send({ error: "not_found" });
+    // SPA-style fallback: non-/api/ misses serve the UI entry point so page
+    // routes (e.g. /event.html?id=...) work on reload. Static files that exist
+    // are served by @fastify/static before this handler runs.
+    return reply.sendFile("index.html");
   });
 
   return { app, oidcFailed };

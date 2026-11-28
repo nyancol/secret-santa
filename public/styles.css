@@ -1,0 +1,87 @@
+/* Minimal semantic styling for the Secret Santa UI (inline-safe: no JS here). */
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+  line-height: 1.5;
+}
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 1rem;
+}
+.site-header nav a {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+#session {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+#dev-login-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 28rem;
+  margin: 1rem 0;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+}
+input,
+select,
+button {
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+}
+button {
+  align-self: flex-start;
+  cursor: pointer;
+}
+li button {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.85rem;
+}
+.badge {
+  display: inline-block;
+  border: 1px solid #888;
+  border-radius: 0.5rem;
+  padding: 0 0.5rem;
+  font-size: 0.8rem;
+}
+[role="alert"] {
+  color: #8a1f1f;
+}
+[role="status"] {
+  color: #1f5c2e;
+}
+.hint {
+  font-size: 0.85rem;
+  color: #555;
+}
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 1rem;
+}
+dt {
+  font-weight: bold;
+}
+dd {
+  margin: 0;
+}
