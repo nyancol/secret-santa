@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["@firecrawl/opencode"],
+  "mcp": {
+    "servers": {
+      "stitch": {
+        "type": "remote",
+        "url": "https://stitch.googleapis.com/mcp",
+        "oauth": false,
+        "headers": {
+          "X-Goog-Api-Key": "{env:STITCH_ACCESS_TOKEN}",
+        },
+      },
+    },
+  },
+}

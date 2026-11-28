@@ -1,0 +1,18 @@
+.firecrawl/
+.env
+.env.dev
+.env.preprod
+.env.prod
+.preprod-slot
+node_modules/
+dist/
+coverage/
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# GCP service-account keys (never commit)
+mapstr-*.json
+*-key.json

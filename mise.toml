@@ -1,0 +1,73 @@
+[tools]
+node = "26.13.1"
+betterleaks = "1.10.1"
+# opencode (sst/opencode v2, npm backend — explicit to avoid clash with aqua:anomalyco/opencode v1)
+"npm:@opencode/cli" = "2.3.2"
+# openspec (spec-driven development CLI)
+"npm:@fission-ai/openspec" = "2.1.1"
+"npm:firecrawl-cli" = "1.30.0"
+"npm:@google/stitch" = "latest"
+
+# ── Git hooks ───────────────────────────────────────────────────────────────
+# Versioned hooks live in .githooks/ (betterleaks pre-commit). Run once per clone:
+#   mise run setup
+[tasks.setup]
+description = "Install tools and enable versioned git hooks (.githooks/)"
+run = "mise install && git config core.hooksPath .githooks && echo 'hooks: core.hooksPath -> .githooks'"
+
+# ── Dev environment ─────────────────────────────────────────────────────────
+# Runs the API in dev mode (tsx watch) with env from .env.dev (gitignored).
+[tasks.dev]
+description = "Run the secret-santa API in dev mode (tsx watch)"
+run = """
+if [ -f .env.dev ]; then set -a; . ./.env.dev; set +a; fi
+npx tsx watch src/index.ts
+"""
+
+# ── Quality gates (mirror CI verify job) ────────────────────────────────────
+[tasks.check]
+description = "Typecheck + lint + format:check + tests (coverage gate)"
+run = "npm run typecheck && npm run lint && npm run format:check && npm test"
+
+[tasks.lint]
+description = "ESLint (JS core rules; types via tsc)"
+run = "npm run lint"
+
+[tasks.format]
+description = "Prettier write"
+run = "npm run format"
+
+# ── Preprod environment ─────────────────────────────────────────────────────
+# Isolated app instance for testing (host port 5176, container port 3000 to
+# match the Caddy target, own container + data volume). Production is never
+# touched. Host port is 5176 (not 5174/5173) so it never collides with the
+# 1001-restaurants dev/preprod instances on the same homelab host.
+# Canonical ports: dev 3222, preprod host 5176 -> container 3000, prod container 3000.
+[tasks.preprod-up]
+description = "Start the preprod app instance (http://localhost:5176)"
+run = "${DOCKER_SUDO-sudo} docker compose --env-file .env.preprod -p secret-santa-preprod -f compose.yaml -f compose.preprod.yaml up -d --build"
+
+[tasks.preprod-deploy]
+description = "Deploy a branch to the single preprod preview slot (refuses to evict without --evict)"
+usage = """
+  flag "--branch <branch>" help="Branch to deploy (must match current checkout)"
+  flag "--evict" help="Confirm evicting another branch's preview"
+"""
+run = """
+ARGS="--branch ${usage_branch:?--branch is required}"
+[ "${usage_evicted:-}" = "true" ] && true
+[ "${usage_evict:-}" = "true" ] && ARGS="$ARGS --evict"
+.agents/skills/ops-preview/scripts/preprod-deploy.sh $ARGS
+"""
+
+[tasks.preprod-verify]
+description = "Verify preprod green (read-only: health, version, logs)"
+run = ".agents/skills/ops-preview/scripts/preprod-verify.sh"
+
+[tasks.preprod-down]
+description = "Stop the preprod app instance (keeps its data volume)"
+run = "${DOCKER_SUDO-sudo} docker compose --env-file .env.preprod -p secret-santa-preprod -f compose.yaml -f compose.preprod.yaml down"
+
+[tasks.preprod-logs]
+description = "Follow preprod app logs"
+run = "${DOCKER_SUDO-sudo} docker compose --env-file .env.preprod -p secret-santa-preprod -f compose.yaml -f compose.preprod.yaml logs -f secret-santa"
